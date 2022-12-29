@@ -1,0 +1,12 @@
+## Interface: 100002
+## Title: |cFF74D06CRE|rCraft
+## Notes: Automate searching of public crafting orders.
+## Version: 1.0.0
+## Author: AcidWeb
+## SavedVariablesPerCharacter: RECraftSettings
+## X-WoWI-ID:
+## X-Wago-ID:
+
+TaintLess.xml
+Embeds.xml
+RECraft.xml

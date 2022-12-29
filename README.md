@@ -1,0 +1,11 @@
+﻿# RECraft
+
+[Wago Addons]()
+
+[WoWInterface]()
+
+## COPYRIGHT
+
+All Rights Reserved unless otherwise explicitly stated.
+
+Copyright (c) 2022-2023 Paweł Jastrzębski <pawelj@iosphe.re>
