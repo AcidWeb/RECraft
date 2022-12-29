@@ -1,8 +1,8 @@
 ﻿# RECraft
 
-[Wago Addons]()
+[Wago Addons](https://addons.wago.io/addons/recraft-crafting-orders-scanner)
 
-[WoWInterface]()
+[WoWInterface](https://www.wowinterface.com/downloads/info26512-RECraft-CraftingOrdersScanner.html)
 
 ## COPYRIGHT
 

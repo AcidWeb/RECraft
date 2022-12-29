@@ -4,8 +4,8 @@
 ## Version: 1.0.0
 ## Author: AcidWeb
 ## SavedVariablesPerCharacter: RECraftSettings
-## X-WoWI-ID:
-## X-Wago-ID:
+## X-WoWI-ID: 26512
+## X-Wago-ID: ME6g93G1
 
 TaintLess.xml
 Embeds.xml
