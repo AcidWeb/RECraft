@@ -129,6 +129,9 @@ function RE:OnEvent(self, event, ...)
 			button:SetPoint("LEFT", OP.BrowseFrame.SearchButton, "RIGHT")
 			button:SetScript("OnClick", RE.SearchToggle)
 
+			RE.StatusText = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+			RE.StatusText:SetPoint("BOTTOM", OP.BrowseFrame.SearchButton, "TOP", 0, 2)
+
 			_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
 			OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
 			hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
@@ -169,6 +172,7 @@ function RE:RequestCallback(orderType)
 			RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a  "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).."  |A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
 		end
 	end
+	RE.StatusText:SetText("Parsed: "..(#RE.OrdersSeen[Enum.CraftingOrderType.Public] + #RE.OrdersSeen[Enum.CraftingOrderType.Guild]))
 end
 
 function RE:SearchRequest()
