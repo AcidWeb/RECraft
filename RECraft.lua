@@ -2,12 +2,11 @@ local _G = _G
 local _, RE = ...
 _G.RECraft = RE
 
-local Timer = _G.C_Timer
+local NewTicker = _G.C_Timer.NewTicker
 local FlashClientIcon = _G.FlashClientIcon
 local GetCrafterOrders = _G.C_CraftingOrders.GetCrafterOrders
 local GetOrderClaimInfo = _G.C_CraftingOrders.GetOrderClaimInfo
 local RequestCrafterOrders = _G.C_CraftingOrders.RequestCrafterOrders
-local RaidNotice_AddMessage = _G.RaidNotice_AddMessage
 local IsNearProfessionSpellFocus = _G.C_TradeSkillUI.IsNearProfessionSpellFocus
 local GetRecipeInfoForSkillLineAbility = _G.C_TradeSkillUI.GetRecipeInfoForSkillLineAbility
 local OP = _G.ProfessionsFrame.OrdersPage
@@ -114,7 +113,7 @@ function RE:OnEvent(self, event, ...)
 		self:UnregisterEvent("ADDON_LOADED")
 	elseif event == "CHAT_MSG_SYSTEM" and ... == _G.ERR_CRAFTING_ORDER_RECEIVED then
 		FlashClientIcon()
-		RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a  "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).."  |A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
 		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg")
 	elseif event == "TRADE_SKILL_SHOW" then
 		RE.Request.profession = OP.professionInfo.profession
@@ -166,10 +165,11 @@ function RE:RequestCallback(orderType)
 		FlashClientIcon()
 		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg")
 		if orderType == Enum.CraftingOrderType.Public then
-			RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a  "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).."  |A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
 			OP:RequestOrders(nil, false, false)
 		elseif orderType == Enum.CraftingOrderType.Guild then
-			RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a  "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).."  |A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+			OP.BrowseFrame.GuildOrdersButton:Click()
 		end
 	end
 	RE.StatusText:SetText("Parsed: "..(#RE.OrdersSeen[Enum.CraftingOrderType.Public] + #RE.OrdersSeen[Enum.CraftingOrderType.Guild]))
@@ -200,7 +200,7 @@ end
 
 function RE:SearchToggle(button)
 	if not RE.Timer and button ~= "override" then
-		RE.Timer = Timer.NewTicker(15, RE.SearchRequest)
+		RE.Timer = NewTicker(15, RE.SearchRequest)
 		RE:SearchRequest()
 		RE:RestartSpinner()
 	elseif RE.Timer then
