@@ -7,6 +7,7 @@ local FlashClientIcon = _G.FlashClientIcon
 local GetCrafterOrders = _G.C_CraftingOrders.GetCrafterOrders
 local GetOrderClaimInfo = _G.C_CraftingOrders.GetOrderClaimInfo
 local RequestCrafterOrders = _G.C_CraftingOrders.RequestCrafterOrders
+local GetRecipeSchematic = _G.C_TradeSkillUI.GetRecipeSchematic
 local IsNearProfessionSpellFocus = _G.C_TradeSkillUI.IsNearProfessionSpellFocus
 local GetRecipeInfoForSkillLineAbility = _G.C_TradeSkillUI.GetRecipeInfoForSkillLineAbility
 local OP = _G.ProfessionsFrame.OrdersPage
@@ -17,6 +18,7 @@ RE.OrdersStatus = {}
 RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
 RE.RequestNext = Enum.CraftingOrderType.Public
 RE.RecipeInfo = {}
+RE.RecipeSchematic = {}
 RE.Initialized = false
 
 RE.AceConfig = {
@@ -145,12 +147,33 @@ function RE:RestartSpinner()
 	end
 end
 
+function RE:GetOrderViability(order)
+	if not RE.RecipeInfo.learned then
+		return false
+	end
+	local lockedSlots = {}
+	for _, v in pairs(RE.RecipeSchematic.reagentSlotSchematics) do
+		if v.reagentType == Enum.CraftingReagentType.Optional and _G.Professions.GetReagentSlotStatus(v, RE.RecipeInfo) then
+			table.insert(lockedSlots, v.slotIndex)
+		end
+	end
+	if #lockedSlots > 0 then
+		for _, v in pairs(order.reagents) do
+			if tContains(lockedSlots, v.reagentSlot) then
+				return false
+			end
+		end
+	end
+	return true
+end
+
 function RE:ParseOrders(orderType)
 	local newFound = false
 	for _, v in pairs(RE.OrdersPayload) do
 		if not tContains(RE.OrdersSeen[orderType], v.orderID) then
 			RE.RecipeInfo = GetRecipeInfoForSkillLineAbility(v.skillLineAbilityID)
-			if RE.RecipeInfo.learned and not tContains(RE.Settings.IgnoredItemID, v.itemID) and v.tipAmount >= RE.Settings.MinimumTipInCopper and (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or RE.RecipeInfo.canSkillUp)) then
+			RE.RecipeSchematic = GetRecipeSchematic(RE.RecipeInfo.recipeID, v.isRecraft)
+			if (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or RE.RecipeInfo.canSkillUp)) and v.tipAmount >= RE.Settings.MinimumTipInCopper and not tContains(RE.Settings.IgnoredItemID, v.itemID) and RE:GetOrderViability(v) then
 				newFound = true
 			end
 			tinsert(RE.OrdersSeen[orderType], v.orderID)
