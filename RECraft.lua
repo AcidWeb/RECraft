@@ -118,6 +118,7 @@ function RE:OnEvent(self, event, ...)
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
 		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg")
 	elseif event == "TRADE_SKILL_SHOW" then
+		if not OP.professionInfo then return end
 		RE.Request.profession = OP.professionInfo.profession
 
 		if not RE.Initialized then
