@@ -116,7 +116,7 @@ function RE:OnEvent(self, event, ...)
 	elseif event == "CHAT_MSG_SYSTEM" and ... == _G.ERR_CRAFTING_ORDER_RECEIVED then
 		FlashClientIcon()
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
-		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg")
+		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	elseif event == "TRADE_SKILL_SHOW" then
 		if not OP.professionInfo then return end
 		RE.Request.profession = OP.professionInfo.profession
@@ -187,7 +187,7 @@ function RE:RequestCallback(orderType)
 	RE.OrdersPayload = GetCrafterOrders()
 	if RE:ParseOrders(orderType) then
 		FlashClientIcon()
-		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg")
+		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 		if orderType == Enum.CraftingOrderType.Public then
 			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
 			OP:RequestOrders(nil, false, false)
