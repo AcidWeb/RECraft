@@ -174,7 +174,10 @@ function RE:ParseOrders(orderType)
 		if not tContains(RE.OrdersSeen[orderType], v.orderID) then
 			RE.RecipeInfo = GetRecipeInfoForSkillLineAbility(v.skillLineAbilityID)
 			RE.RecipeSchematic = GetRecipeSchematic(RE.RecipeInfo.recipeID, v.isRecraft)
-			if (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or RE.RecipeInfo.canSkillUp)) and v.tipAmount >= RE.Settings.MinimumTipInCopper and not tContains(RE.Settings.IgnoredItemID, v.itemID) and RE:GetOrderViability(v) then
+			if (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or (RE.RecipeInfo.canSkillUp and RE.RecipeInfo.relativeDifficulty < Enum.TradeskillRelativeDifficulty.Trivial)))
+			and v.tipAmount >= RE.Settings.MinimumTipInCopper
+			and not tContains(RE.Settings.IgnoredItemID, v.itemID)
+			and RE:GetOrderViability(v) then
 				newFound = true
 			end
 			tinsert(RE.OrdersSeen[orderType], v.orderID)
