@@ -137,6 +137,7 @@ function RE:OnEvent(self, event, ...)
 			_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
 			OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
 			hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
+			hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
 		end
 	end
 end
