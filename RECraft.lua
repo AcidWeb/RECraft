@@ -115,7 +115,7 @@ function RE:OnEvent(self, event, ...)
 		self:UnregisterEvent("ADDON_LOADED")
 	elseif event == "CHAT_MSG_SYSTEM" and ... == _G.ERR_CRAFTING_ORDER_RECEIVED then
 		FlashClientIcon()
-		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
 		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	elseif event == "TRADE_SKILL_SHOW" then
 		if not OP.professionInfo then return end
@@ -193,10 +193,10 @@ function RE:RequestCallback(orderType)
 		FlashClientIcon()
 		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 		if orderType == Enum.CraftingOrderType.Public then
-			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
 			OP:RequestOrders(nil, false, false)
 		elseif orderType == Enum.CraftingOrderType.Guild then
-			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:Vehicle-HammerGold:20:20|a"..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).."|A:Vehicle-HammerGold:20:20|a", _G.ChatTypeInfo["RAID_WARNING"])
+			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
 			OP.BrowseFrame.GuildOrdersButton:Click()
 		end
 	end
