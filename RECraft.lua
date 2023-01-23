@@ -8,6 +8,7 @@ local GetCrafterOrders = _G.C_CraftingOrders.GetCrafterOrders
 local GetOrderClaimInfo = _G.C_CraftingOrders.GetOrderClaimInfo
 local RequestCrafterOrders = _G.C_CraftingOrders.RequestCrafterOrders
 local GetRecipeSchematic = _G.C_TradeSkillUI.GetRecipeSchematic
+local GetChildProfessionInfo = _G.C_TradeSkillUI.GetChildProfessionInfo
 local IsNearProfessionSpellFocus = _G.C_TradeSkillUI.IsNearProfessionSpellFocus
 local GetRecipeInfoForSkillLineAbility = _G.C_TradeSkillUI.GetRecipeInfoForSkillLineAbility
 local OP = _G.ProfessionsFrame.OrdersPage
@@ -19,7 +20,6 @@ RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.G
 RE.RequestNext = Enum.CraftingOrderType.Public
 RE.RecipeInfo = {}
 RE.RecipeSchematic = {}
-RE.Initialized = false
 
 RE.AceConfig = {
 	type = "group",
@@ -81,6 +81,7 @@ function RE:OnLoad(self)
 	self:RegisterEvent("ADDON_LOADED")
 	self:RegisterEvent("CHAT_MSG_SYSTEM")
 	self:RegisterEvent("TRADE_SKILL_SHOW")
+	self:RegisterEvent("TRADE_SKILL_LIST_UPDATE")
 
 	RE.Request = {
 		searchFavorites = false,
@@ -101,6 +102,7 @@ end
 
 function RE:OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "RECraft" then
+		self:UnregisterEvent("ADDON_LOADED")
 		if not _G.RECraftSettings then
 			_G.RECraftSettings = RE.DefaultConfig
 		end
@@ -112,32 +114,29 @@ function RE:OnEvent(self, event, ...)
 		end
 		_G.LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
 		_G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
-		self:UnregisterEvent("ADDON_LOADED")
 	elseif event == "CHAT_MSG_SYSTEM" and ... == _G.ERR_CRAFTING_ORDER_RECEIVED then
 		FlashClientIcon()
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
 		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	elseif event == "TRADE_SKILL_SHOW" then
-		if not OP.professionInfo then return end
-		RE.Request.profession = OP.professionInfo.profession
-
-		if not RE.Initialized then
-			RE.Initialized = true
-			local button = CreateFrame("Button", nil, OP.BrowseFrame.SearchButton, "RefreshButtonTemplate")
-			if ElvUI then
-				ElvUI[1]:GetModule("Skins"):HandleButton(button)
-				button:Size(22)
-			end
-			button:SetPoint("LEFT", OP.BrowseFrame.SearchButton, "RIGHT")
-			button:SetScript("OnClick", RE.SearchToggle)
-
-			RE.StatusText = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-			RE.StatusText:SetPoint("BOTTOM", OP.BrowseFrame.SearchButton, "TOP", 0, 2)
-
-			_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
-			OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
-			hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
-			hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
+		self:UnregisterEvent("TRADE_SKILL_SHOW")
+		local button = CreateFrame("Button", nil, OP.BrowseFrame.SearchButton, "RefreshButtonTemplate")
+		if ElvUI then
+			ElvUI[1]:GetModule("Skins"):HandleButton(button)
+			button:Size(22)
+		end
+		button:SetPoint("LEFT", OP.BrowseFrame.SearchButton, "RIGHT")
+		button:SetScript("OnClick", RE.SearchToggle)
+		RE.StatusText = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+		RE.StatusText:SetPoint("BOTTOM", OP.BrowseFrame.SearchButton, "TOP", 0, 2)
+		_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
+		OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
+		hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
+		hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
+	elseif event == "TRADE_SKILL_LIST_UPDATE" then
+		local professionInfo = GetChildProfessionInfo()
+		if professionInfo and professionInfo.profession then
+			RE.Request.profession = professionInfo.profession
 		end
 	end
 end
