@@ -227,7 +227,7 @@ end
 
 function RE:SearchToggle(button)
 	if not RE.Timer and button ~= "override" then
-		RE.Timer = NewTicker(15, RE.SearchRequest)
+		RE.Timer = NewTicker(10, RE.SearchRequest)
 		RE:SearchRequest()
 		RE:RestartSpinner()
 	elseif RE.Timer then
