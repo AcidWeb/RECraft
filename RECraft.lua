@@ -1,10 +1,13 @@
 local _G = _G
 local _, RE = ...
+local EVENT = LibStub("AceEvent-3.0")
+local BUCKET = LibStub("AceBucket-3.0")
 _G.RECraft = RE
 
 local NewTicker = _G.C_Timer.NewTicker
 local FlashClientIcon = _G.FlashClientIcon
 local GetCrafterOrders = _G.C_CraftingOrders.GetCrafterOrders
+local GetCrafterBuckets = _G.C_CraftingOrders.GetCrafterBuckets
 local GetOrderClaimInfo = _G.C_CraftingOrders.GetOrderClaimInfo
 local RequestCrafterOrders = _G.C_CraftingOrders.RequestCrafterOrders
 local GetRecipeSchematic = _G.C_TradeSkillUI.GetRecipeSchematic
@@ -14,12 +17,15 @@ local GetRecipeInfoForSkillLineAbility = _G.C_TradeSkillUI.GetRecipeInfoForSkill
 local OP = _G.ProfessionsFrame.OrdersPage
 local ElvUI = _G.ElvUI
 
+RE.ScanQueue = {}
+RE.BucketPayload = {}
 RE.OrdersPayload = {}
 RE.OrdersStatus = {}
 RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
 RE.RequestNext = Enum.CraftingOrderType.Public
 RE.RecipeInfo = {}
 RE.RecipeSchematic = {}
+RE.BucketScanInProgress = false
 
 RE.AceConfig = {
 	type = "group",
@@ -82,6 +88,9 @@ function RE:OnLoad(self)
 	self:RegisterEvent("CHAT_MSG_SYSTEM")
 	self:RegisterEvent("TRADE_SKILL_SHOW")
 	self:RegisterEvent("TRADE_SKILL_LIST_UPDATE")
+	self:RegisterEvent("CRAFTINGORDERS_CAN_REQUEST")
+
+	BUCKET:RegisterBucketMessage("RECRAFT_NOTIFICATION", 1, RE.Notification)
 
 	RE.Request = {
 		searchFavorites = false,
@@ -115,9 +124,8 @@ function RE:OnEvent(self, event, ...)
 		_G.LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
 		_G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
 	elseif event == "CHAT_MSG_SYSTEM" and ... == _G.ERR_CRAFTING_ORDER_RECEIVED then
-		FlashClientIcon()
-		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
-		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
+		RE.NotificationType = Enum.CraftingOrderType.Personal
+		EVENT:SendMessage("RECRAFT_NOTIFICATION")
 	elseif event == "TRADE_SKILL_SHOW" then
 		self:UnregisterEvent("TRADE_SKILL_SHOW")
 		local button = CreateFrame("Button", nil, OP.BrowseFrame.SearchButton, "RefreshButtonTemplate")
@@ -127,6 +135,8 @@ function RE:OnEvent(self, event, ...)
 		end
 		button:SetPoint("LEFT", OP.BrowseFrame.SearchButton, "RIGHT")
 		button:SetScript("OnClick", RE.SearchToggle)
+		OP.BrowseFrame.BackButton:ClearAllPoints()
+		OP.BrowseFrame.BackButton:SetPoint("LEFT", button, "RIGHT")
 		RE.StatusText = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 		RE.StatusText:SetPoint("BOTTOM", OP.BrowseFrame.SearchButton, "TOP", 0, 2)
 		_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
@@ -138,6 +148,28 @@ function RE:OnEvent(self, event, ...)
 		if professionInfo and professionInfo.profession then
 			RE.Request.profession = professionInfo.profession
 		end
+	elseif event == "CRAFTINGORDERS_CAN_REQUEST" and RE.BucketScanInProgress then
+		if #RE.ScanQueue > 0 then
+			RE.Request.selectedSkillLineAbility = RE.ScanQueue[1]
+			RequestCrafterOrders(RE.Request)
+			table.remove(RE.ScanQueue, 1)
+		else
+			RE.BucketScanInProgress = false
+		end
+	end
+end
+
+function RE:Notification()
+	FlashClientIcon()
+	PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
+	if RE.NotificationType == Enum.CraftingOrderType.Public then
+		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
+		OP:RequestOrders(nil, false, false)
+	elseif RE.NotificationType == Enum.CraftingOrderType.Guild then
+		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
+		OP.BrowseFrame.GuildOrdersButton:Click()
+	elseif RE.NotificationType == Enum.CraftingOrderType.Personal then
+		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
 	end
 end
 
@@ -186,24 +218,37 @@ function RE:ParseOrders(orderType)
 	return newFound
 end
 
-function RE:RequestCallback(orderType)
-	RE.OrdersPayload = GetCrafterOrders()
-	if RE:ParseOrders(orderType) then
-		FlashClientIcon()
-		PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
-		if orderType == Enum.CraftingOrderType.Public then
-			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
-			OP:RequestOrders(nil, false, false)
-		elseif orderType == Enum.CraftingOrderType.Guild then
-			_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
-			OP.BrowseFrame.GuildOrdersButton:Click()
+function RE:ParseBucket()
+	RE.BucketScanInProgress = true
+	for _, v in pairs(RE.BucketPayload) do
+		if v.numAvailable > 0 and not tContains(RE.Settings.IgnoredItemID, v.itemID) then
+			table.insert(RE.ScanQueue, v.skillLineAbilityID)
 		end
 	end
-	RE.StatusText:SetText("Parsed: "..(#RE.OrdersSeen[Enum.CraftingOrderType.Public] + #RE.OrdersSeen[Enum.CraftingOrderType.Guild]))
+	if #RE.ScanQueue > 0 then
+		RE.Request.selectedSkillLineAbility = RE.ScanQueue[1]
+		RequestCrafterOrders(RE.Request)
+		table.remove(RE.ScanQueue, 1)
+	end
+end
+
+function RE:RequestCallback(orderType, displayBuckets)
+	if displayBuckets then
+		RE.BucketPayload = GetCrafterBuckets()
+		RE:ParseBucket()
+	else
+		RE.OrdersPayload = GetCrafterOrders()
+		if RE:ParseOrders(orderType) then
+			RE.NotificationType = orderType
+			EVENT:SendMessage("RECRAFT_NOTIFICATION")
+		end
+		RE.StatusText:SetText("Parsed: "..(#RE.OrdersSeen[Enum.CraftingOrderType.Public] + #RE.OrdersSeen[Enum.CraftingOrderType.Guild]))
+	end
 end
 
 function RE:SearchRequest()
-	if not OP.OrderView:IsShown() then
+	if not OP.OrderView:IsShown() and not RE.BucketScanInProgress then
+		RE.Request.selectedSkillLineAbility = nil
 		if RE.RequestNext == Enum.CraftingOrderType.Public or not RE.Settings.ScanGuildOrders then
 			RE.RequestNext = Enum.CraftingOrderType.Guild
 			RE.OrdersStatus = GetOrderClaimInfo(RE.Request.profession)
@@ -235,5 +280,7 @@ function RE:SearchToggle(button)
 		RE.Timer = nil
 		OP.BrowseFrame.OrderList.LoadingSpinner:Hide()
 		OP.BrowseFrame.OrderList.SpinnerAnim:Stop()
+		RE.ScanQueue = {}
+		RE.BucketScanInProgress = false
 	end
 end
