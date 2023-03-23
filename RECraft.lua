@@ -48,12 +48,21 @@ RE.AceConfig = {
 			set = function(_, val) RE.Settings.ShowOnlyFirstCraftAndSkillUp = val end,
 			get = function(_) return RE.Settings.ShowOnlyFirstCraftAndSkillUp end
 		},
+		Incomplete = {
+			name = "Only orders with all reagents",
+			desc = "Trigger notification only if detected order have all mandatory reagents provided.",
+			type = "toggle",
+			width = "full",
+			order = 3,
+			set = function(_, val) RE.Settings.ShowOnlyWithRegents = val end,
+			get = function(_) return RE.Settings.ShowOnlyWithRegents end
+		},
 		Tip = {
 			name = "Smallest acceptable tip",
 			desc = "Orders with a smaller tip will be ignored.",
 			type = "input",
 			width = "normal",
-			order = 3,
+			order = 4,
 			pattern = "%d",
 			usage = "Enter the amount of gold.",
 			set = function(_, val) RE.Settings.MinimumTipInCopper = val * 10000 end,
@@ -64,7 +73,7 @@ RE.AceConfig = {
 			desc = "Comma-separated list of ItemIDs whose orders will be ignored.",
 			type = "input",
 			width = "double",
-			order = 4,
+			order = 5,
 			set = function(_, val)
 				local input = {strsplit(",", val)}
 				for k, v in pairs(input) do
@@ -78,6 +87,7 @@ RE.AceConfig = {
 }
 RE.DefaultConfig = {
 	ShowOnlyFirstCraftAndSkillUp = false,
+	ShowOnlyWithRegents = false,
 	ScanGuildOrders = false,
 	MinimumTipInCopper = 0,
 	IgnoredItemID = {}
@@ -207,6 +217,7 @@ function RE:ParseOrders(orderType)
 			RE.RecipeInfo = GetRecipeInfoForSkillLineAbility(v.skillLineAbilityID)
 			RE.RecipeSchematic = GetRecipeSchematic(RE.RecipeInfo.recipeID, v.isRecraft)
 			if (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or (RE.RecipeInfo.canSkillUp and RE.RecipeInfo.relativeDifficulty < Enum.TradeskillRelativeDifficulty.Trivial)))
+			and (not RE.Settings.ShowOnlyWithRegents or (v.reagentState == Enum.CraftingOrderReagentsType.All))
 			and v.tipAmount >= RE.Settings.MinimumTipInCopper
 			and not tContains(RE.Settings.IgnoredItemID, v.itemID)
 			and RE:GetOrderViability(v) then
