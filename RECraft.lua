@@ -99,10 +99,14 @@ RECraftStatusTemplateMixin = CreateFromMixins(_G.TableBuilderCellMixin)
 
 function RECraftStatusTemplateMixin:Populate(rowData, _)
 	if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
-		if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
-			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
+		if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
+			if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
+				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
+			else
+				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
+			end
 		else
-			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
+			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
 		end
 	end
 end
@@ -168,7 +172,7 @@ function RE:OnEvent(self, event, ...)
 		hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
 		hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
 		hooksecurefunc(OP, "SetupTable", function(self)
-			if self.browseType == 1 and self.orderType ~= Enum.CraftingOrderType.Personal and #RE.OrdersSeen[self.orderType] > 0 then
+			if self.browseType == 1 and self.orderType ~= Enum.CraftingOrderType.Personal then
 				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
 				self.tableBuilder:Arrange()
 			end
@@ -194,7 +198,6 @@ function RE:Notification()
 	PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	if RE.NotificationType == Enum.CraftingOrderType.Public then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
-		OP:SetupTable()
 		OP:RequestOrders(nil, false, false)
 	elseif RE.NotificationType == Enum.CraftingOrderType.Guild then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
