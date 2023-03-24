@@ -8,5 +8,7 @@
 			<OnEvent>RECraft:OnEvent(self, event, ...)</OnEvent>
 		</Scripts>
 	</Frame>
+	
+	<Frame name="RECraftStatusTemplate" mixin="RECraftStatusTemplateMixin" inherits="ProfessionsTableCellTextTemplate" passThroughButtons="LeftButton, RightButton" virtual="true"/>
 
 </Ui>

@@ -22,6 +22,7 @@ RE.BucketPayload = {}
 RE.OrdersPayload = {}
 RE.OrdersStatus = {}
 RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
 RE.RequestNext = Enum.CraftingOrderType.Public
 RE.RecipeInfo = {}
 RE.RecipeSchematic = {}
@@ -36,7 +37,7 @@ RE.AceConfig = {
 			type = "toggle",
 			width = "full",
 			order = 1,
-			set = function(_, val) RE.Settings.ScanGuildOrders = val end,
+			set = function(_, val) RE.Settings.ScanGuildOrders = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ScanGuildOrders end
 		},
 		SkillUp = {
@@ -45,7 +46,7 @@ RE.AceConfig = {
 			type = "toggle",
 			width = "full",
 			order = 2,
-			set = function(_, val) RE.Settings.ShowOnlyFirstCraftAndSkillUp = val end,
+			set = function(_, val) RE.Settings.ShowOnlyFirstCraftAndSkillUp = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyFirstCraftAndSkillUp end
 		},
 		Incomplete = {
@@ -54,7 +55,7 @@ RE.AceConfig = {
 			type = "toggle",
 			width = "full",
 			order = 3,
-			set = function(_, val) RE.Settings.ShowOnlyWithRegents = val end,
+			set = function(_, val) RE.Settings.ShowOnlyWithRegents = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyWithRegents end
 		},
 		Tip = {
@@ -65,7 +66,7 @@ RE.AceConfig = {
 			order = 4,
 			pattern = "%d",
 			usage = "Enter the amount of gold.",
-			set = function(_, val) RE.Settings.MinimumTipInCopper = val * 10000 end,
+			set = function(_, val) RE.Settings.MinimumTipInCopper = val * 10000; RE:ResetFilters() end,
 			get = function(_) return tostring(RE.Settings.MinimumTipInCopper / 10000) end
 		},
 		IgnoredItems = {
@@ -80,6 +81,7 @@ RE.AceConfig = {
 					input[k] = tonumber(v)
 				 end
 				RE.Settings.IgnoredItemID = input
+				RE:ResetFilters()
 			end,
 			get = function(_) return table.concat(RE.Settings.IgnoredItemID, ",") end
 		}
@@ -92,6 +94,18 @@ RE.DefaultConfig = {
 	MinimumTipInCopper = 0,
 	IgnoredItemID = {}
 }
+
+RECraftStatusTemplateMixin = CreateFromMixins(_G.TableBuilderCellMixin)
+
+function RECraftStatusTemplateMixin:Populate(rowData, _)
+	if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
+		if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
+			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
+		else
+			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
+		end
+	end
+end
 
 function RE:OnLoad(self)
 	self:RegisterEvent("ADDON_LOADED")
@@ -153,6 +167,12 @@ function RE:OnEvent(self, event, ...)
 		OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
 		hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
 		hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
+		hooksecurefunc(OP, "SetupTable", function(self)
+			if self.browseType == 1 and self.orderType ~= Enum.CraftingOrderType.Personal and #RE.OrdersSeen[self.orderType] > 0 then
+				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
+				self.tableBuilder:Arrange()
+			end
+		end)
 	elseif event == "TRADE_SKILL_LIST_UPDATE" then
 		local professionInfo = GetChildProfessionInfo()
 		if professionInfo and professionInfo.profession then
@@ -174,6 +194,7 @@ function RE:Notification()
 	PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	if RE.NotificationType == Enum.CraftingOrderType.Public then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
+		OP:SetupTable()
 		OP:RequestOrders(nil, false, false)
 	elseif RE.NotificationType == Enum.CraftingOrderType.Guild then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
@@ -222,6 +243,7 @@ function RE:ParseOrders(orderType)
 			and not tContains(RE.Settings.IgnoredItemID, v.itemID)
 			and RE:GetOrderViability(v) then
 				newFound = true
+				tinsert(RE.OrdersFound[orderType], v.orderID)
 			end
 			tinsert(RE.OrdersSeen[orderType], v.orderID)
 		end
@@ -293,5 +315,13 @@ function RE:SearchToggle(button)
 		OP.BrowseFrame.OrderList.SpinnerAnim:Stop()
 		RE.ScanQueue = {}
 		RE.BucketScanInProgress = false
+	end
+end
+
+function RE:ResetFilters()
+	RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+	RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+	if RE.StatusText then
+		RE.StatusText:SetText("Parsed: 0")
 	end
 end
