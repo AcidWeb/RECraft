@@ -1,7 +1,7 @@
 ## Interface: 100007
 ## Title: |cFF74D06CRE|rCraft
 ## Notes: Automate searching of public crafting orders.
-## Version: 1.4.1
+## Version: 1.4.2
 ## Author: AcidWeb
 ## SavedVariablesPerCharacter: RECraftSettings
 ## X-WoWI-ID: 26512

@@ -24,6 +24,8 @@ RE.OrdersStatus = {}
 RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
 RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
 RE.RequestNext = Enum.CraftingOrderType.Public
+RE.BucketsSeen = {}
+RE.BucketsFound = {}
 RE.RecipeInfo = {}
 RE.RecipeSchematic = {}
 RE.BucketScanInProgress = false
@@ -98,15 +100,27 @@ RE.DefaultConfig = {
 RECraftStatusTemplateMixin = CreateFromMixins(_G.TableBuilderCellMixin)
 
 function RECraftStatusTemplateMixin:Populate(rowData, _)
-	if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
-		if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
-			if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
+	if rowData.option.numAvailable then
+		if tContains(RE.BucketsSeen, rowData.option.skillLineAbilityID) then
+			if tContains(RE.BucketsFound, rowData.option.skillLineAbilityID) then
 				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
 			else
 				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
 			end
 		else
 			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
+		end
+	else
+		if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
+			if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
+				if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
+					_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
+				else
+					_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
+				end
+			else
+				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
+			end
 		end
 	end
 end
@@ -172,7 +186,7 @@ function RE:OnEvent(self, event, ...)
 		hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
 		hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
 		hooksecurefunc(OP, "SetupTable", function(self)
-			if self.browseType == 1 and self.orderType ~= Enum.CraftingOrderType.Personal then
+			if self.orderType ~= Enum.CraftingOrderType.Personal then
 				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
 				self.tableBuilder:Arrange()
 			end
@@ -246,9 +260,16 @@ function RE:ParseOrders(orderType)
 			and not tContains(RE.Settings.IgnoredItemID, v.itemID)
 			and RE:GetOrderViability(v) then
 				newFound = true
-				tinsert(RE.OrdersFound[orderType], v.orderID)
+				table.insert(RE.OrdersFound[orderType], v.orderID)
+				if not tContains(RE.BucketsFound, v.skillLineAbilityID) then
+					table.insert(RE.BucketsFound, v.skillLineAbilityID)
+				end
 			end
-			tinsert(RE.OrdersSeen[orderType], v.orderID)
+			table.insert(RE.OrdersSeen[orderType], v.orderID)
+		else
+			if not tContains(RE.BucketsFound, v.skillLineAbilityID) and tContains(RE.OrdersFound[orderType], v.orderID) then
+				table.insert(RE.BucketsFound, v.skillLineAbilityID)
+			end
 		end
 	end
 	return newFound
@@ -259,6 +280,9 @@ function RE:ParseBucket()
 	for _, v in pairs(RE.BucketPayload) do
 		if v.numAvailable > 0 and not tContains(RE.Settings.IgnoredItemID, v.itemID) then
 			table.insert(RE.ScanQueue, v.skillLineAbilityID)
+			if not tContains(RE.BucketsSeen, v.skillLineAbilityID) then
+				table.insert(RE.BucketsSeen, v.skillLineAbilityID)
+			end
 		end
 	end
 	if #RE.ScanQueue > 0 then
@@ -270,6 +294,7 @@ end
 
 function RE:RequestCallback(orderType, displayBuckets)
 	if displayBuckets then
+		wipe(RE.BucketsFound)
 		RE.BucketPayload = GetCrafterBuckets()
 		RE:ParseBucket()
 	else
@@ -324,6 +349,8 @@ end
 function RE:ResetFilters()
 	RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
 	RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+	RE.BucketsSeen = {}
+	RE.BucketsFound = {}
 	if RE.StatusText then
 		RE.StatusText:SetText("Parsed: 0")
 	end
