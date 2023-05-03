@@ -1,9 +1,10 @@
-## Interface: 100007
+## Interface: 100100
 ## Title: |cFF74D06CRE|rCraft
 ## Notes: Automate searching of public crafting orders.
-## Version: 1.4.2
+## Version: 1.4.3
 ## Author: AcidWeb
 ## SavedVariablesPerCharacter: RECraftSettings
+## IconTexture: Interface\AddOns\RECraft\RELogo
 ## X-WoWI-ID: 26512
 ## X-Wago-ID: ME6g93G1
 
