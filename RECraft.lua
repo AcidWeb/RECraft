@@ -14,7 +14,6 @@ local GetRecipeSchematic = _G.C_TradeSkillUI.GetRecipeSchematic
 local GetChildProfessionInfo = _G.C_TradeSkillUI.GetChildProfessionInfo
 local IsNearProfessionSpellFocus = _G.C_TradeSkillUI.IsNearProfessionSpellFocus
 local GetRecipeInfoForSkillLineAbility = _G.C_TradeSkillUI.GetRecipeInfoForSkillLineAbility
-local OP = _G.ProfessionsFrame.OrdersPage
 local ElvUI = _G.ElvUI
 
 RE.ScanQueue = {}
@@ -154,6 +153,8 @@ end
 function RE:OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "RECraft" then
 		self:UnregisterEvent("ADDON_LOADED")
+		ProfessionsFrame_LoadUI()
+		RE.OP = _G.ProfessionsFrame.OrdersPage
 		if not _G.RECraftSettings then
 			_G.RECraftSettings = RE.DefaultConfig
 		end
@@ -170,22 +171,22 @@ function RE:OnEvent(self, event, ...)
 		EVENT:SendMessage("RECRAFT_NOTIFICATION")
 	elseif event == "TRADE_SKILL_SHOW" then
 		self:UnregisterEvent("TRADE_SKILL_SHOW")
-		local button = CreateFrame("Button", nil, OP.BrowseFrame.SearchButton, "RefreshButtonTemplate")
+		local button = CreateFrame("Button", nil, RE.OP.BrowseFrame.SearchButton, "RefreshButtonTemplate")
 		if ElvUI then
 			ElvUI[1]:GetModule("Skins"):HandleButton(button)
 			button:Size(22)
 		end
-		button:SetPoint("LEFT", OP.BrowseFrame.SearchButton, "RIGHT")
+		button:SetPoint("LEFT", RE.OP.BrowseFrame.SearchButton, "RIGHT")
 		button:SetScript("OnClick", RE.SearchToggle)
-		OP.BrowseFrame.BackButton:ClearAllPoints()
-		OP.BrowseFrame.BackButton:SetPoint("LEFT", button, "RIGHT")
+		RE.OP.BrowseFrame.BackButton:ClearAllPoints()
+		RE.OP.BrowseFrame.BackButton:SetPoint("LEFT", button, "RIGHT")
 		RE.StatusText = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-		RE.StatusText:SetPoint("BOTTOM", OP.BrowseFrame.SearchButton, "TOP", 0, 2)
+		RE.StatusText:SetPoint("BOTTOM", RE.OP.BrowseFrame.SearchButton, "TOP", 0, 2)
 		_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
-		OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
-		hooksecurefunc(OP, "ShowGeneric", RE.RestartSpinner)
-		hooksecurefunc(OP, "StartDefaultSearch", RE.RestartSpinner)
-		hooksecurefunc(OP, "SetupTable", function(self)
+		RE.OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
+		hooksecurefunc(RE.OP, "ShowGeneric", RE.RestartSpinner)
+		hooksecurefunc(RE.OP, "StartDefaultSearch", RE.RestartSpinner)
+		hooksecurefunc(RE.OP, "SetupTable", function(self)
 			if self.orderType ~= Enum.CraftingOrderType.Personal then
 				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
 				self.tableBuilder:Arrange()
@@ -212,10 +213,10 @@ function RE:Notification()
 	PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	if RE.NotificationType == Enum.CraftingOrderType.Public then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
-		OP:RequestOrders(nil, false, false)
+		RE.OP:RequestOrders(nil, false, false)
 	elseif RE.NotificationType == Enum.CraftingOrderType.Guild then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
-		OP.BrowseFrame.GuildOrdersButton:Click()
+		RE.OP.BrowseFrame.GuildOrdersButton:Click()
 	elseif RE.NotificationType == Enum.CraftingOrderType.Personal then
 		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
 	end
@@ -223,8 +224,8 @@ end
 
 function RE:RestartSpinner()
 	if RE.Timer then
-		OP.BrowseFrame.OrderList.LoadingSpinner:Show()
-		OP.BrowseFrame.OrderList.SpinnerAnim:Restart()
+		RE.OP.BrowseFrame.OrderList.LoadingSpinner:Show()
+		RE.OP.BrowseFrame.OrderList.SpinnerAnim:Restart()
 	end
 end
 
@@ -308,7 +309,7 @@ function RE:RequestCallback(orderType, displayBuckets)
 end
 
 function RE:SearchRequest()
-	if not OP.OrderView:IsShown() and not RE.BucketScanInProgress then
+	if not RE.OP.OrderView:IsShown() and not RE.BucketScanInProgress then
 		RE.Request.selectedSkillLineAbility = nil
 		if RE.RequestNext == Enum.CraftingOrderType.Public or not RE.Settings.ScanGuildOrders then
 			RE.RequestNext = Enum.CraftingOrderType.Guild
@@ -339,8 +340,8 @@ function RE:SearchToggle(button)
 	elseif RE.Timer then
 		RE.Timer:Cancel()
 		RE.Timer = nil
-		OP.BrowseFrame.OrderList.LoadingSpinner:Hide()
-		OP.BrowseFrame.OrderList.SpinnerAnim:Stop()
+		RE.OP.BrowseFrame.OrderList.LoadingSpinner:Hide()
+		RE.OP.BrowseFrame.OrderList.SpinnerAnim:Stop()
 		RE.ScanQueue = {}
 		RE.BucketScanInProgress = false
 	end
