@@ -225,7 +225,6 @@ end
 function RE:RestartSpinner()
 	if RE.Timer then
 		RE.OP.BrowseFrame.OrderList.LoadingSpinner:Show()
-		RE.OP.BrowseFrame.OrderList.SpinnerAnim:Restart()
 	end
 end
 
@@ -341,7 +340,6 @@ function RE:SearchToggle(button)
 		RE.Timer:Cancel()
 		RE.Timer = nil
 		RE.OP.BrowseFrame.OrderList.LoadingSpinner:Hide()
-		RE.OP.BrowseFrame.OrderList.SpinnerAnim:Stop()
 		RE.ScanQueue = {}
 		RE.BucketScanInProgress = false
 	end
