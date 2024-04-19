@@ -1,20 +1,19 @@
-local _G = _G
 local _, RE = ...
 local EVENT = LibStub("AceEvent-3.0")
 local BUCKET = LibStub("AceBucket-3.0")
-_G.RECraft = RE
+RECraft = RE
 
-local NewTicker = _G.C_Timer.NewTicker
-local FlashClientIcon = _G.FlashClientIcon
-local GetCrafterOrders = _G.C_CraftingOrders.GetCrafterOrders
-local GetCrafterBuckets = _G.C_CraftingOrders.GetCrafterBuckets
-local GetOrderClaimInfo = _G.C_CraftingOrders.GetOrderClaimInfo
-local RequestCrafterOrders = _G.C_CraftingOrders.RequestCrafterOrders
-local GetRecipeSchematic = _G.C_TradeSkillUI.GetRecipeSchematic
-local GetChildProfessionInfo = _G.C_TradeSkillUI.GetChildProfessionInfo
-local IsNearProfessionSpellFocus = _G.C_TradeSkillUI.IsNearProfessionSpellFocus
-local GetRecipeInfoForSkillLineAbility = _G.C_TradeSkillUI.GetRecipeInfoForSkillLineAbility
-local ElvUI = _G.ElvUI
+local NewTicker = C_Timer.NewTicker
+local FlashClientIcon = FlashClientIcon
+local GetCrafterOrders = C_CraftingOrders.GetCrafterOrders
+local GetCrafterBuckets = C_CraftingOrders.GetCrafterBuckets
+local GetOrderClaimInfo = C_CraftingOrders.GetOrderClaimInfo
+local RequestCrafterOrders = C_CraftingOrders.RequestCrafterOrders
+local GetRecipeSchematic = C_TradeSkillUI.GetRecipeSchematic
+local GetChildProfessionInfo = C_TradeSkillUI.GetChildProfessionInfo
+local IsNearProfessionSpellFocus = C_TradeSkillUI.IsNearProfessionSpellFocus
+local GetRecipeInfoForSkillLineAbility = C_TradeSkillUI.GetRecipeInfoForSkillLineAbility
+local ElvUI = ElvUI
 
 RE.ScanQueue = {}
 RE.BucketPayload = {}
@@ -96,29 +95,29 @@ RE.DefaultConfig = {
 	IgnoredItemID = {}
 }
 
-RECraftStatusTemplateMixin = CreateFromMixins(_G.TableBuilderCellMixin)
+RECraftStatusTemplateMixin = CreateFromMixins(TableBuilderCellMixin)
 
 function RECraftStatusTemplateMixin:Populate(rowData, _)
 	if rowData.option.numAvailable then
 		if tContains(RE.BucketsSeen, rowData.option.skillLineAbilityID) then
 			if tContains(RE.BucketsFound, rowData.option.skillLineAbilityID) then
-				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
+				ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
 			else
-				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
+				ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
 			end
 		else
-			_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
+			ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
 		end
 	else
 		if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
 			if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
 				if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
-					_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
+					ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
 				else
-					_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
+					ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-NotReady:0|t")
 				end
 			else
-				_G.ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
+				ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
 			end
 		end
 	end
@@ -154,19 +153,19 @@ function RE:OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "RECraft" then
 		self:UnregisterEvent("ADDON_LOADED")
 		ProfessionsFrame_LoadUI()
-		RE.OP = _G.ProfessionsFrame.OrdersPage
-		if not _G.RECraftSettings then
-			_G.RECraftSettings = RE.DefaultConfig
+		RE.OP = ProfessionsFrame.OrdersPage
+		if not RECraftSettings then
+			RECraftSettings = RE.DefaultConfig
 		end
-		RE.Settings = _G.RECraftSettings
+		RE.Settings = RECraftSettings
 		for key, value in pairs(RE.DefaultConfig) do
 			if RE.Settings[key] == nil then
 				RE.Settings[key] = value
 			end
 		end
-		_G.LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
-		_G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
-	elseif event == "CHAT_MSG_SYSTEM" and ... == _G.ERR_CRAFTING_ORDER_RECEIVED then
+		LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
+		LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
+	elseif event == "CHAT_MSG_SYSTEM" and ... == ERR_CRAFTING_ORDER_RECEIVED then
 		RE.NotificationType = Enum.CraftingOrderType.Personal
 		EVENT:SendMessage("RECRAFT_NOTIFICATION")
 	elseif event == "TRADE_SKILL_SHOW" then
@@ -182,7 +181,7 @@ function RE:OnEvent(self, event, ...)
 		RE.OP.BrowseFrame.BackButton:SetPoint("LEFT", button, "RIGHT")
 		RE.StatusText = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 		RE.StatusText:SetPoint("BOTTOM", RE.OP.BrowseFrame.SearchButton, "TOP", 0, 2)
-		_G.ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
+		ProfessionsFrame:HookScript("OnHide", function() RE:SearchToggle("override") end)
 		RE.OP.OrderView:HookScript("OnHide", RE.RestartSpinner)
 		hooksecurefunc(RE.OP, "ShowGeneric", RE.RestartSpinner)
 		hooksecurefunc(RE.OP, "StartDefaultSearch", RE.RestartSpinner)
@@ -212,13 +211,13 @@ function RE:Notification()
 	FlashClientIcon()
 	PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
 	if RE.NotificationType == Enum.CraftingOrderType.Public then
-		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
+		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
 		RE.OP:RequestOrders(nil, false, false)
 	elseif RE.NotificationType == Enum.CraftingOrderType.Guild then
-		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
+		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
 		RE.OP.BrowseFrame.GuildOrdersButton:Click()
 	elseif RE.NotificationType == Enum.CraftingOrderType.Personal then
-		_G.RaidNotice_AddMessage(_G.RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(_G.PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", _G.ChatTypeInfo["RAID_WARNING"])
+		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
 	end
 end
 
@@ -234,7 +233,7 @@ function RE:GetOrderViability(order)
 	end
 	local lockedSlots = {}
 	for _, v in pairs(RE.RecipeSchematic.reagentSlotSchematics) do
-		if v.reagentType == Enum.CraftingReagentType.Optional and _G.Professions.GetReagentSlotStatus(v, RE.RecipeInfo) then
+		if v.reagentType == Enum.CraftingReagentType.Optional and Professions.GetReagentSlotStatus(v, RE.RecipeInfo) then
 			table.insert(lockedSlots, v.slotIndex)
 		end
 	end

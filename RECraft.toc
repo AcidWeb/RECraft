@@ -8,6 +8,5 @@
 ## X-WoWI-ID: 26512
 ## X-Wago-ID: ME6g93G1
 
-TaintLess.xml
 Embeds.xml
 RECraft.xml

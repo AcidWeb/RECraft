@@ -1,0 +1,22 @@
+{
+	"$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
+	"runtime.version": "Lua 5.1",
+	"diagnostics.globals": [
+        "ERR_CRAFTING_ORDER_RECEIVED",
+        "PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC",
+        "PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD",
+        "PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE",
+		"ElvUI",
+		"TableBuilderCellMixin",
+		"ProfessionsTableCellTextMixin",
+		"ChatTypeInfo",
+		"Professions",
+		"ProfessionsFrame",
+		"ProfessionsFrame_LoadUI",
+		"RaidNotice_AddMessage",
+		"RaidWarningFrame"
+    ],
+	"diagnostics.disable": [
+		"undefined-field"
+	]
+}
