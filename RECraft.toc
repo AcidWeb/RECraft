@@ -1,7 +1,7 @@
-## Interface: 110000
+## Interface: 110002
 ## Title: |cFF74D06CRE|rCraft
 ## Notes: Automate searching of public crafting orders.
-## Version: 1.4.10
+## Version: 1.4.11
 ## Author: AcidWeb
 ## SavedVariablesPerCharacter: RECraftSettings
 ## IconTexture: Interface\AddOns\RECraft\RELogo
