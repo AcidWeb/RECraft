@@ -19,8 +19,8 @@ RE.ScanQueue = {}
 RE.BucketPayload = {}
 RE.OrdersPayload = {}
 RE.OrdersStatus = {}
-RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
-RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Personal] = {}, [Enum.CraftingOrderType.Npc] = {}}
+RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Personal] = {}, [Enum.CraftingOrderType.Npc] = {}}
 RE.RequestNext = Enum.CraftingOrderType.Public
 RE.BucketsSeen = {}
 RE.BucketsFound = {}
@@ -109,7 +109,7 @@ function RECraftStatusTemplateMixin:Populate(rowData, _)
 			ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
 		end
 	else
-		if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
+		if rowData.option.orderType ~= Enum.CraftingOrderType.Personal and rowData.option.orderType ~= Enum.CraftingOrderType.Npc then
 			if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
 				if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
 					ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
@@ -210,15 +210,19 @@ end
 function RE:Notification()
 	FlashClientIcon()
 	PlaySoundFile("Interface\\AddOns\\RECraft\\Media\\TadaFanfare.ogg", "Master")
+	local notificationText = ""
 	if RE.NotificationType == Enum.CraftingOrderType.Public then
-		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
+		notificationText = PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PUBLIC
 		RE.OP:RequestOrders(nil, false, false)
 	elseif RE.NotificationType == Enum.CraftingOrderType.Guild then
-		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
+		notificationText = PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_GUILD
 		RE.OP.BrowseFrame.GuildOrdersButton:Click()
 	elseif RE.NotificationType == Enum.CraftingOrderType.Personal then
-		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
+		notificationText = PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE
+	elseif RE.NotificationType == Enum.CraftingOrderType.Npc then
+		notificationText = "NPC" -- You may want to use a localized string here if available
 	end
+	RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(notificationText).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
 end
 
 function RE:RestartSpinner()
@@ -345,8 +349,8 @@ function RE:SearchToggle(button)
 end
 
 function RE:ResetFilters()
-	RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
-	RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+	RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Personal] = {}, [Enum.CraftingOrderType.Npc] = {}}
+	RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Personal] = {}, [Enum.CraftingOrderType.Npc] = {}}
 	RE.BucketsSeen = {}
 	RE.BucketsFound = {}
 	if RE.StatusText then
