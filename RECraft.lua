@@ -109,7 +109,7 @@ function RECraftStatusTemplateMixin:Populate(rowData, _)
 			ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
 		end
 	else
-		if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
+		if rowData.option.orderType == Enum.CraftingOrderType.Public or rowData.option.orderType == Enum.CraftingOrderType.Guild then
 			if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
 				if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
 					ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
@@ -186,7 +186,7 @@ function RE:OnEvent(self, event, ...)
 		hooksecurefunc(RE.OP, "ShowGeneric", RE.RestartSpinner)
 		hooksecurefunc(RE.OP, "StartDefaultSearch", RE.RestartSpinner)
 		hooksecurefunc(RE.OP, "SetupTable", function(self)
-			if self.orderType ~= Enum.CraftingOrderType.Personal then
+			if self.orderType == Enum.CraftingOrderType.Public or self.orderType == Enum.CraftingOrderType.Guild then
 				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
 				self.tableBuilder:Arrange()
 			end
@@ -233,7 +233,7 @@ function RE:GetOrderViability(order)
 	end
 	local lockedSlots = {}
 	for _, v in pairs(RE.RecipeSchematic.reagentSlotSchematics) do
-		if v.reagentType == Enum.CraftingReagentType.Optional and Professions.GetReagentSlotStatus(v, RE.RecipeInfo) then
+		if Professions.GetReagentSlotStatus(v, RE.RecipeInfo) then
 			table.insert(lockedSlots, v.slotIndex)
 		end
 	end
