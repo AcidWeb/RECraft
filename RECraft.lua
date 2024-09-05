@@ -5,6 +5,7 @@ RECraft = RE
 
 local NewTicker = C_Timer.NewTicker
 local FlashClientIcon = FlashClientIcon
+local GetItemIconByID = C_Item.GetItemIconByID
 local GetCrafterOrders = C_CraftingOrders.GetCrafterOrders
 local GetCrafterBuckets = C_CraftingOrders.GetCrafterBuckets
 local GetOrderClaimInfo = C_CraftingOrders.GetOrderClaimInfo
@@ -16,28 +17,34 @@ local GetRecipeInfoForSkillLineAbility = C_TradeSkillUI.GetRecipeInfoForSkillLin
 local ElvUI = ElvUI
 
 RE.ScanQueue = {}
+RE.ScanBucketQueue = {}
 RE.BucketPayload = {}
 RE.OrdersPayload = {}
 RE.OrdersStatus = {}
-RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
-RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
-RE.RequestNext = Enum.CraftingOrderType.Public
+RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Npc] = {}}
+RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Npc] = {}}
 RE.BucketsSeen = {}
 RE.BucketsFound = {}
 RE.RecipeInfo = {}
 RE.RecipeSchematic = {}
 RE.BucketScanInProgress = false
+RE.ClaimsRemaining = false
 
 RE.AceConfig = {
 	type = "group",
 	args = {
+		HeaderA = {
+			name = "Public/Guild orders",
+			type = "header",
+			order = 1,
+		},
 		Guild = {
-			name = "Check guild orders",
-			desc = "Also monitor the changes in guild craft orders.",
+			name = "Check Guild orders",
+			desc = "Also monitor the changes in Guild craft orders.",
 			type = "toggle",
 			width = "full",
-			order = 1,
-			set = function(_, val) RE.Settings.ScanGuildOrders = val; RE:ResetFilters() end,
+			order = 2,
+			set = function(_, val) RE.Settings.ScanGuildOrders = val; RE:ResetFilters(); RE:ResetSearchQueue() end,
 			get = function(_) return RE.Settings.ScanGuildOrders end
 		},
 		SkillUp = {
@@ -45,7 +52,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order is first craft or provide skill up.",
 			type = "toggle",
 			width = "full",
-			order = 2,
+			order = 3,
 			set = function(_, val) RE.Settings.ShowOnlyFirstCraftAndSkillUp = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyFirstCraftAndSkillUp end
 		},
@@ -54,7 +61,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order have all mandatory reagents provided.",
 			type = "toggle",
 			width = "full",
-			order = 3,
+			order = 4,
 			set = function(_, val) RE.Settings.ShowOnlyWithRegents = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyWithRegents end
 		},
@@ -63,7 +70,7 @@ RE.AceConfig = {
 			desc = "Orders with a smaller tip will be ignored.",
 			type = "input",
 			width = "normal",
-			order = 4,
+			order = 5,
 			pattern = "%d",
 			usage = "Enter the amount of gold.",
 			set = function(_, val) RE.Settings.MinimumTipInCopper = val * 10000; RE:ResetFilters() end,
@@ -74,7 +81,7 @@ RE.AceConfig = {
 			desc = "Comma-separated list of ItemIDs whose orders will be ignored.",
 			type = "input",
 			width = "double",
-			order = 5,
+			order = 6,
 			set = function(_, val)
 				local input = {strsplit(",", val)}
 				for k, v in pairs(input) do
@@ -84,18 +91,65 @@ RE.AceConfig = {
 				RE:ResetFilters()
 			end,
 			get = function(_) return table.concat(RE.Settings.IgnoredItemID, ",") end
+		},
+		HeaderB = {
+			name = "Patron orders",
+			type = "header",
+			order = 7,
+		},
+		Patron = {
+			name = "Check Patron orders",
+			desc = "Monitor the changes in Patron craft orders.",
+			type = "toggle",
+			width = "full",
+			order = 8,
+			set = function(_, val) RE.Settings.ScanNpcOrders = val; RE:ResetFilters(); RE:ResetSearchQueue() end,
+			get = function(_) return RE.Settings.ScanNpcOrders end
+		},
+		SkillUpNpc = {
+			name = "Only first crafts and skill ups",
+			desc = "Trigger notification only if detected order is first craft or provide skill up.",
+			type = "toggle",
+			width = "full",
+			order = 9,
+			set = function(_, val) RE.Settings.ShowOnlyNpcOrderFirstCraftAndSkillUp = val; RE:ResetFilters() end,
+			get = function(_) return RE.Settings.ShowOnlyNpcOrderFirstCraftAndSkillUp end
+		},
+		IncompleteNpc = {
+			name = "Only orders with all reagents",
+			desc = "Trigger notification only if detected order have all mandatory reagents provided.",
+			type = "toggle",
+			width = "full",
+			order = 10,
+			set = function(_, val) RE.Settings.ShowOnlyNpcOrderWithRegents = val; RE:ResetFilters() end,
+			get = function(_) return RE.Settings.ShowOnlyNpcOrderWithRegents end
+		},
+		Glimmer = {
+			name = "Only orders rewarding Glimmer/Acuity",
+			desc = "Trigger notification only if detected order reward contain Glimmer of Knowledge and/or Artisan's Acuity.",
+			type = "toggle",
+			width = "full",
+			order = 11,
+			set = function(_, val) RE.Settings.ShowOnlyNpcOrderWithGlimmer = val; RE:ResetFilters() end,
+			get = function(_) return RE.Settings.ShowOnlyNpcOrderWithGlimmer end
 		}
 	}
 }
 RE.DefaultConfig = {
 	ShowOnlyFirstCraftAndSkillUp = false,
+	ShowOnlyNpcOrderFirstCraftAndSkillUp = false,
 	ShowOnlyWithRegents = false,
+	ShowOnlyNpcOrderWithRegents = false,
+	ShowOnlyNpcOrderWithGlimmer = false,
 	ScanGuildOrders = false,
+	ScanNpcOrders = false,
 	MinimumTipInCopper = 0,
 	IgnoredItemID = {}
 }
+RE.GlimmerItems = {228725, 228729, 228727, 228731, 228733, 228735, 228737, 228739, 210814}
 
 RECraftStatusTemplateMixin = CreateFromMixins(TableBuilderCellMixin)
+RECraftRewardTemplateMixin = CreateFromMixins(TableBuilderCellMixin)
 
 function RECraftStatusTemplateMixin:Populate(rowData, _)
 	if rowData.option.numAvailable then
@@ -109,7 +163,7 @@ function RECraftStatusTemplateMixin:Populate(rowData, _)
 			ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Waiting:0|t")
 		end
 	else
-		if rowData.option.orderType == Enum.CraftingOrderType.Public or rowData.option.orderType == Enum.CraftingOrderType.Guild then
+		if rowData.option.orderType ~= Enum.CraftingOrderType.Personal then
 			if tContains(RE.OrdersSeen[rowData.option.orderType], rowData.option.orderID) then
 				if tContains(RE.OrdersFound[rowData.option.orderType], rowData.option.orderID) then
 					ProfessionsTableCellTextMixin.SetText(self, "|TInterface\\RaidFrame\\ReadyCheck-Ready:0|t")
@@ -121,6 +175,22 @@ function RECraftStatusTemplateMixin:Populate(rowData, _)
 			end
 		end
 	end
+end
+
+function RECraftRewardTemplateMixin:Populate(rowData, _)
+	local order = rowData.option
+	local reward = ""
+	for _, v in pairs(order.npcOrderRewards) do
+		if v.itemLink then
+			local itemIcon = GetItemIconByID(v.itemLink)
+			if v.count > 1 then
+				reward = reward .. v.count .. "x|T" .. itemIcon .. ":0|t "
+			else
+				reward = reward .. "|T" .. itemIcon .. ":0|t "
+			end
+		end
+	end
+	ProfessionsTableCellTextMixin.SetText(self, reward)
 end
 
 function RE:OnLoad(self)
@@ -163,6 +233,7 @@ function RE:OnEvent(self, event, ...)
 				RE.Settings[key] = value
 			end
 		end
+		RE:ResetSearchQueue()
 		LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
 		LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
 	elseif event == "CHAT_MSG_SYSTEM" and ... == ERR_CRAFTING_ORDER_RECEIVED then
@@ -186,8 +257,11 @@ function RE:OnEvent(self, event, ...)
 		hooksecurefunc(RE.OP, "ShowGeneric", RE.RestartSpinner)
 		hooksecurefunc(RE.OP, "StartDefaultSearch", RE.RestartSpinner)
 		hooksecurefunc(RE.OP, "SetupTable", function(self)
-			if self.orderType == Enum.CraftingOrderType.Public or self.orderType == Enum.CraftingOrderType.Guild then
+			if self.orderType ~= Enum.CraftingOrderType.Personal then
 				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
+				if self.orderType == Enum.CraftingOrderType.Npc then
+					self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 0, 0, REWARD, "RECraftRewardTemplate")
+				end
 				self.tableBuilder:Arrange()
 			end
 		end)
@@ -197,10 +271,10 @@ function RE:OnEvent(self, event, ...)
 			RE.Request.profession = professionInfo.profession
 		end
 	elseif event == "CRAFTINGORDERS_CAN_REQUEST" and RE.BucketScanInProgress then
-		if #RE.ScanQueue > 0 then
-			RE.Request.selectedSkillLineAbility = RE.ScanQueue[1]
+		if #RE.ScanBucketQueue > 0 then
+			RE.Request.selectedSkillLineAbility = RE.ScanBucketQueue[1]
 			RequestCrafterOrders(RE.Request)
-			table.remove(RE.ScanQueue, 1)
+			table.remove(RE.ScanBucketQueue, 1)
 		else
 			RE.BucketScanInProgress = false
 		end
@@ -218,6 +292,9 @@ function RE:Notification()
 		RE.OP.BrowseFrame.GuildOrdersButton:Click()
 	elseif RE.NotificationType == Enum.CraftingOrderType.Personal then
 		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTING_FORM_ORDER_RECIPIENT_PRIVATE).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
+	elseif RE.NotificationType == Enum.CraftingOrderType.Npc then
+		RaidNotice_AddMessage(RaidWarningFrame, "|A:auctionhouse-icon-favorite:10:10|a "..strupper(PROFESSIONS_CRAFTER_ORDER_TAB_NPC.." "..HUD_EDIT_MODE_SETTING_MICRO_MENU_ORDER).." |A:auctionhouse-icon-favorite:10:10|a", ChatTypeInfo["RAID_WARNING"])
+		RE.OP.BrowseFrame.NpcOrdersButton:Click()
 	end
 end
 
@@ -247,21 +324,50 @@ function RE:GetOrderViability(order)
 	return true
 end
 
+function RE:GetOrderReward(order)
+	for _, v in pairs(order.npcOrderRewards) do
+		if v.itemLink then
+			local itemID = tonumber(select(3, string.find(v.itemLink, "item:(%d+)")))
+			if tContains(RE.GlimmerItems, itemID) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 function RE:ParseOrders(orderType)
 	local newFound = false
 	for _, v in pairs(RE.OrdersPayload) do
 		if not tContains(RE.OrdersSeen[orderType], v.orderID) then
+			wipe(RE.RecipeInfo)
+			wipe(RE.RecipeSchematic)
 			RE.RecipeInfo = GetRecipeInfoForSkillLineAbility(v.skillLineAbilityID)
 			RE.RecipeSchematic = GetRecipeSchematic(RE.RecipeInfo.recipeID, v.isRecraft)
-			if (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or (RE.RecipeInfo.canSkillUp and RE.RecipeInfo.relativeDifficulty < Enum.TradeskillRelativeDifficulty.Trivial)))
-			and (not RE.Settings.ShowOnlyWithRegents or (v.reagentState == Enum.CraftingOrderReagentsType.All))
-			and v.tipAmount >= RE.Settings.MinimumTipInCopper
-			and not tContains(RE.Settings.IgnoredItemID, v.itemID)
-			and RE:GetOrderViability(v) then
-				newFound = true
-				table.insert(RE.OrdersFound[orderType], v.orderID)
-				if not tContains(RE.BucketsFound, v.skillLineAbilityID) then
-					table.insert(RE.BucketsFound, v.skillLineAbilityID)
+			if orderType == Enum.CraftingOrderType.Npc then
+				-- Patron Filter
+				if (not RE.Settings.ShowOnlyNpcOrderFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or (RE.RecipeInfo.canSkillUp and RE.RecipeInfo.relativeDifficulty < Enum.TradeskillRelativeDifficulty.Trivial)))
+				and (not RE.Settings.ShowOnlyNpcOrderWithRegents or (v.reagentState == Enum.CraftingOrderReagentsType.All))
+				and (not RE.Settings.ShowOnlyNpcOrderWithGlimmer or RE:GetOrderReward(v))
+				and RE:GetOrderViability(v) then
+					newFound = true
+					table.insert(RE.OrdersFound[orderType], v.orderID)
+					if not tContains(RE.BucketsFound, v.skillLineAbilityID) then
+						table.insert(RE.BucketsFound, v.skillLineAbilityID)
+					end
+				end
+			else
+				-- Public/Guild Filter
+				if (not RE.Settings.ShowOnlyFirstCraftAndSkillUp or (RE.RecipeInfo.firstCraft or (RE.RecipeInfo.canSkillUp and RE.RecipeInfo.relativeDifficulty < Enum.TradeskillRelativeDifficulty.Trivial)))
+				and (not RE.Settings.ShowOnlyWithRegents or (v.reagentState == Enum.CraftingOrderReagentsType.All))
+				and v.tipAmount >= RE.Settings.MinimumTipInCopper
+				and not tContains(RE.Settings.IgnoredItemID, v.itemID)
+				and RE:GetOrderViability(v) then
+					newFound = true
+					table.insert(RE.OrdersFound[orderType], v.orderID)
+					if not tContains(RE.BucketsFound, v.skillLineAbilityID) then
+						table.insert(RE.BucketsFound, v.skillLineAbilityID)
+					end
 				end
 			end
 			table.insert(RE.OrdersSeen[orderType], v.orderID)
@@ -278,54 +384,58 @@ function RE:ParseBucket()
 	RE.BucketScanInProgress = true
 	for _, v in pairs(RE.BucketPayload) do
 		if v.numAvailable > 0 and not tContains(RE.Settings.IgnoredItemID, v.itemID) then
-			table.insert(RE.ScanQueue, v.skillLineAbilityID)
+			table.insert(RE.ScanBucketQueue, v.skillLineAbilityID)
 			if not tContains(RE.BucketsSeen, v.skillLineAbilityID) then
 				table.insert(RE.BucketsSeen, v.skillLineAbilityID)
 			end
 		end
 	end
-	if #RE.ScanQueue > 0 then
-		RE.Request.selectedSkillLineAbility = RE.ScanQueue[1]
+	if #RE.ScanBucketQueue > 0 then
+		RE.Request.selectedSkillLineAbility = RE.ScanBucketQueue[1]
 		RequestCrafterOrders(RE.Request)
-		table.remove(RE.ScanQueue, 1)
+		table.remove(RE.ScanBucketQueue, 1)
 	end
 end
 
 function RE:RequestCallback(orderType, displayBuckets)
 	if displayBuckets then
 		wipe(RE.BucketsFound)
+		wipe(RE.BucketPayload)
 		RE.BucketPayload = GetCrafterBuckets()
 		RE:ParseBucket()
 	else
+		wipe(RE.OrdersPayload)
 		RE.OrdersPayload = GetCrafterOrders()
 		if RE:ParseOrders(orderType) then
 			RE.NotificationType = orderType
 			EVENT:SendMessage("RECRAFT_NOTIFICATION")
 		end
-		RE.StatusText:SetText("Parsed: "..(#RE.OrdersSeen[Enum.CraftingOrderType.Public] + #RE.OrdersSeen[Enum.CraftingOrderType.Guild]))
+		RE.StatusText:SetText("Parsed: "..(#RE.OrdersSeen[Enum.CraftingOrderType.Public] + #RE.OrdersSeen[Enum.CraftingOrderType.Guild] + #RE.OrdersSeen[Enum.CraftingOrderType.Npc]))
 	end
 end
 
 function RE:SearchRequest()
 	if not RE.OP.OrderView:IsShown() and not RE.BucketScanInProgress then
 		RE.Request.selectedSkillLineAbility = nil
-		if RE.RequestNext == Enum.CraftingOrderType.Public or not RE.Settings.ScanGuildOrders then
-			RE.RequestNext = Enum.CraftingOrderType.Guild
+		if RE.ScanQueue[1] == Enum.CraftingOrderType.Public then
 			RE.OrdersStatus = GetOrderClaimInfo(RE.Request.profession)
-			if IsNearProfessionSpellFocus(RE.Request.profession) and RE.OrdersStatus.claimsRemaining > 0 then
-				RE.Request.orderType = Enum.CraftingOrderType.Public
+			RE.ClaimsRemaining = RE.OrdersStatus.claimsRemaining > 0
+		else
+			RE.ClaimsRemaining = true
+		end
+		if IsNearProfessionSpellFocus(RE.Request.profession) then
+			if RE.ClaimsRemaining then
+				RE.Request.orderType = RE.ScanQueue[1]
 				RequestCrafterOrders(RE.Request)
-			elseif not RE.Settings.ScanGuildOrders then
+			elseif not RE.ClaimsRemaining and not RE.Settings.ScanGuildOrders and not RE.Settings.ScanNpcOrders then
 				RE:SearchToggle()
 			end
-		elseif RE.RequestNext == Enum.CraftingOrderType.Guild then
-			RE.RequestNext = Enum.CraftingOrderType.Public
-			if IsNearProfessionSpellFocus(RE.Request.profession) then
-				RE.Request.orderType = Enum.CraftingOrderType.Guild
-				RequestCrafterOrders(RE.Request)
-			else
-				RE:SearchToggle()
-			end
+		else
+			RE:SearchToggle()
+		end
+		table.remove(RE.ScanQueue, 1)
+		if #RE.ScanQueue == 0 then
+			RE:ResetSearchQueue()
 		end
 	end
 end
@@ -339,17 +449,36 @@ function RE:SearchToggle(button)
 		RE.Timer:Cancel()
 		RE.Timer = nil
 		RE.OP.BrowseFrame.OrderList.LoadingSpinner:Hide()
-		RE.ScanQueue = {}
+		RE.ScanBucketQueue = {}
 		RE.BucketScanInProgress = false
 	end
 end
 
 function RE:ResetFilters()
-	RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
-	RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}}
+	RE.OrdersSeen = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Npc] = {}}
+	RE.OrdersFound = {[Enum.CraftingOrderType.Public] = {}, [Enum.CraftingOrderType.Guild] = {}, [Enum.CraftingOrderType.Npc] = {}}
 	RE.BucketsSeen = {}
 	RE.BucketsFound = {}
 	if RE.StatusText then
 		RE.StatusText:SetText("Parsed: 0")
+	end
+end
+
+function RE:ResetSearchQueue()
+	RE.ScanQueue = {
+		Enum.CraftingOrderType.Public,
+		Enum.CraftingOrderType.Public,
+		Enum.CraftingOrderType.Public,
+		Enum.CraftingOrderType.Public,
+		Enum.CraftingOrderType.Public,
+		Enum.CraftingOrderType.Public
+	}
+	if RE.Settings.ScanGuildOrders and RE.Settings.ScanNpcOrders then
+		RE.ScanQueue[2] = Enum.CraftingOrderType.Npc
+		RE.ScanQueue[3] = Enum.CraftingOrderType.Guild
+	elseif RE.Settings.ScanGuildOrders then
+		RE.ScanQueue[2] = Enum.CraftingOrderType.Guild
+	elseif RE.Settings.ScanNpcOrders then
+		RE.ScanQueue[2] = Enum.CraftingOrderType.Npc
 	end
 end

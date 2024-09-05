@@ -9,6 +9,8 @@
 		</Scripts>
 	</Frame>
 	
-	<Frame name="RECraftStatusTemplate" mixin="RECraftStatusTemplateMixin" inherits="ProfessionsTableCellTextTemplate" passThroughButtons="LeftButton, RightButton" virtual="true"/>
+	<Frame name="RECraftStatusTemplate" mixin="RECraftStatusTemplateMixin" inherits="ProfessionsTableCellTextTemplate" virtual="true"/>
+
+	<Frame name="RECraftRewardTemplate" mixin="RECraftRewardTemplateMixin" inherits="ProfessionsTableCellTextTemplate" virtual="true"/>
 
 </Ui>
