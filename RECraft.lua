@@ -180,13 +180,15 @@ end
 function RECraftRewardTemplateMixin:Populate(rowData, _)
 	local order = rowData.option
 	local reward = ""
-	for _, v in pairs(order.npcOrderRewards) do
-		if v.itemLink then
-			local itemIcon = GetItemIconByID(v.itemLink)
-			if v.count > 1 then
-				reward = reward .. v.count .. "x|T" .. itemIcon .. ":0|t "
-			else
-				reward = reward .. "|T" .. itemIcon .. ":0|t "
+	if order.npcOrderRewards and #order.npcOrderRewards > 0 then
+		for _, v in pairs(order.npcOrderRewards) do
+			if v.itemLink then
+				local itemIcon = GetItemIconByID(v.itemLink)
+				if v.count > 1 then
+					reward = reward .. v.count .. "x|T" .. itemIcon .. ":0|t "
+				else
+					reward = reward .. "|T" .. itemIcon .. ":0|t "
+				end
 			end
 		end
 	end
