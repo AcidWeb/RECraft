@@ -1,10 +1,21 @@
-## Interface: 110007
+## Interface: 110100
 ## Title: |cFF74D06CRE|rCraft
 ## Notes: Automate searching of public crafting orders.
-## Version: 1.5.3
+## Version: 1.6.0
 ## Author: AcidWeb
 ## SavedVariablesPerCharacter: RECraftSettings
 ## IconTexture: Interface\AddOns\RECraft\RELogo
+## Category-enUS: Professions
+## Category-deDE: Berufe
+## Category-esES: Profesiones
+## Category-esMX: Profesiones
+## Category-frFR: Métiers
+## Category-itIT: Professioni
+## Category-koKR: 전문 기술
+## Category-ptBR: Profissões
+## Category-ruRU: Профессии
+## Category-zhCN: 专业
+## Category-zhTW: 專業技能
 ## X-WoWI-ID: 26512
 ## X-Wago-ID: ME6g93G1
 
