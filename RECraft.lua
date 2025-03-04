@@ -37,12 +37,21 @@ RE.AceConfig = {
 			type = "header",
 			order = 1,
 		},
+		Claims = {
+			name = "Scan Public orders without orders remaining",
+			desc = "Do not stop Public order scanning when the daily limit is reached.",
+			type = "toggle",
+			width = "full",
+			order = 2,
+			set = function(_, val) RE.Settings.ScanWithoutClaimsRemaining = val end,
+			get = function(_) return RE.Settings.ScanWithoutClaimsRemaining end
+		},
 		Guild = {
 			name = "Check Guild orders",
 			desc = "Also monitor the changes in Guild craft orders.",
 			type = "toggle",
 			width = "full",
-			order = 2,
+			order = 3,
 			set = function(_, val) RE.Settings.ScanGuildOrders = val; RE:ResetFilters(); RE:ResetSearchQueue() end,
 			get = function(_) return RE.Settings.ScanGuildOrders end
 		},
@@ -51,7 +60,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order is first craft or provide skill up.",
 			type = "toggle",
 			width = "full",
-			order = 3,
+			order = 4,
 			set = function(_, val) RE.Settings.ShowOnlyFirstCraftAndSkillUp = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyFirstCraftAndSkillUp end
 		},
@@ -60,7 +69,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order have all mandatory reagents provided.",
 			type = "toggle",
 			width = "full",
-			order = 4,
+			order = 5,
 			set = function(_, val) RE.Settings.ShowOnlyWithRegents = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyWithRegents end
 		},
@@ -69,7 +78,7 @@ RE.AceConfig = {
 			desc = "Orders with a smaller tip will be ignored.",
 			type = "input",
 			width = "normal",
-			order = 5,
+			order = 6,
 			pattern = "%d",
 			usage = "Enter the amount of gold.",
 			set = function(_, val) RE.Settings.MinimumTipInCopper = val * 10000; RE:ResetFilters() end,
@@ -80,7 +89,7 @@ RE.AceConfig = {
 			desc = "Comma-separated list of ItemIDs whose orders will be ignored.",
 			type = "input",
 			width = "double",
-			order = 6,
+			order = 7,
 			set = function(_, val)
 				local input = {strsplit(",", val)}
 				for k, v in pairs(input) do
@@ -94,14 +103,14 @@ RE.AceConfig = {
 		HeaderB = {
 			name = "Patron orders",
 			type = "header",
-			order = 7,
+			order = 8,
 		},
 		Patron = {
 			name = "Check Patron orders",
 			desc = "Monitor the changes in Patron craft orders.",
 			type = "toggle",
 			width = "full",
-			order = 8,
+			order = 9,
 			set = function(_, val) RE.Settings.ScanNpcOrders = val; RE:ResetFilters(); RE:ResetSearchQueue() end,
 			get = function(_) return RE.Settings.ScanNpcOrders end
 		},
@@ -110,7 +119,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order is first craft or provide skill up.",
 			type = "toggle",
 			width = "full",
-			order = 9,
+			order = 10,
 			set = function(_, val) RE.Settings.ShowOnlyNpcOrderFirstCraftAndSkillUp = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyNpcOrderFirstCraftAndSkillUp end
 		},
@@ -119,7 +128,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order have all mandatory reagents provided.",
 			type = "toggle",
 			width = "full",
-			order = 10,
+			order = 11,
 			set = function(_, val) RE.Settings.ShowOnlyNpcOrderWithRegents = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyNpcOrderWithRegents end
 		},
@@ -128,7 +137,7 @@ RE.AceConfig = {
 			desc = "Trigger notification only if detected order reward contain Glimmer of Knowledge and/or Artisan's Acuity.",
 			type = "toggle",
 			width = "full",
-			order = 11,
+			order = 12,
 			set = function(_, val) RE.Settings.ShowOnlyNpcOrderWithGlimmer = val; RE:ResetFilters() end,
 			get = function(_) return RE.Settings.ShowOnlyNpcOrderWithGlimmer end
 		}
@@ -142,6 +151,7 @@ RE.DefaultConfig = {
 	ShowOnlyNpcOrderWithGlimmer = false,
 	ScanGuildOrders = false,
 	ScanNpcOrders = false,
+	ScanWithoutClaimsRemaining = false,
 	MinimumTipInCopper = 0,
 	IgnoredItemID = {}
 }
@@ -398,7 +408,7 @@ function RE:SearchRequest()
 		RE.Request.selectedSkillLineAbility = nil
 		if RE.ScanQueue[1] == Enum.CraftingOrderType.Public then
 			RE.OrdersStatus = GetOrderClaimInfo(RE.Request.profession)
-			RE.ClaimsRemaining = RE.OrdersStatus.claimsRemaining > 0
+			RE.ClaimsRemaining = RE.Settings.ScanWithoutClaimsRemaining or RE.OrdersStatus.claimsRemaining > 0
 		else
 			RE.ClaimsRemaining = true
 		end
