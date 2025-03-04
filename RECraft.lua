@@ -5,7 +5,6 @@ RECraft = RE
 
 local NewTicker = C_Timer.NewTicker
 local FlashClientIcon = FlashClientIcon
-local GetItemIconByID = C_Item.GetItemIconByID
 local GetCrafterOrders = C_CraftingOrders.GetCrafterOrders
 local GetCrafterBuckets = C_CraftingOrders.GetCrafterBuckets
 local GetOrderClaimInfo = C_CraftingOrders.GetOrderClaimInfo
@@ -86,7 +85,7 @@ RE.AceConfig = {
 				local input = {strsplit(",", val)}
 				for k, v in pairs(input) do
 					input[k] = tonumber(v)
-				 end
+				end
 				RE.Settings.IgnoredItemID = input
 				RE:ResetFilters()
 			end,
@@ -149,7 +148,6 @@ RE.DefaultConfig = {
 RE.GlimmerItems = {228725, 228729, 228727, 228731, 228733, 228735, 228737, 228739, 210814}
 
 RECraftStatusTemplateMixin = CreateFromMixins(TableBuilderCellMixin)
-RECraftRewardTemplateMixin = CreateFromMixins(TableBuilderCellMixin)
 
 function RECraftStatusTemplateMixin:Populate(rowData, _)
 	if rowData.option.numAvailable then
@@ -175,24 +173,6 @@ function RECraftStatusTemplateMixin:Populate(rowData, _)
 			end
 		end
 	end
-end
-
-function RECraftRewardTemplateMixin:Populate(rowData, _)
-	local order = rowData.option
-	local reward = ""
-	if order.npcOrderRewards and #order.npcOrderRewards > 0 then
-		for _, v in pairs(order.npcOrderRewards) do
-			if v.itemLink then
-				local itemIcon = GetItemIconByID(v.itemLink)
-				if v.count > 1 then
-					reward = reward .. v.count .. "x|T" .. itemIcon .. ":0|t "
-				else
-					reward = reward .. "|T" .. itemIcon .. ":0|t "
-				end
-			end
-		end
-	end
-	ProfessionsTableCellTextMixin.SetText(self, reward)
 end
 
 function RE:OnLoad(self)
@@ -261,9 +241,6 @@ function RE:OnEvent(self, event, ...)
 		hooksecurefunc(RE.OP, "SetupTable", function(self)
 			if self.orderType ~= Enum.CraftingOrderType.Personal then
 				self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 15, 0, "|cFF74D06CRE|rCraft", "RECraftStatusTemplate")
-				if self.orderType == Enum.CraftingOrderType.Npc then
-					self.tableBuilder:AddUnsortableFixedWidthColumn(self, 0, 60, 0, 0, REWARD, "RECraftRewardTemplate")
-				end
 				self.tableBuilder:Arrange()
 			end
 		end)
