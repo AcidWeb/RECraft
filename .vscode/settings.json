@@ -30,7 +30,8 @@
         "ProfessionsFrame",
         "ProfessionsFrame_LoadUI",
         "RaidNotice_AddMessage",
-        "RaidWarningFrame"
+        "RaidWarningFrame",
+        "PatronOffersRoot"
     ],
     "Lua.diagnostics.disable": [
         "missing-fields",

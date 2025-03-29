@@ -185,6 +185,25 @@ function RECraftStatusTemplateMixin:Populate(rowData, _)
 	end
 end
 
+function RECraftPOFFIntegration(event, row, _, orderID)
+	if event == "POFF_ORDER_INIT" then
+		if not row.ProductIcon.RECraftState then
+			row.ProductIcon.RECraftState = row.ProductIcon:CreateFontString(nil, "ARTWORK", "NumberFontNormal")
+			row.ProductIcon.RECraftState:SetJustifyH("CENTER")
+			row.ProductIcon.RECraftState:SetPoint("CENTER")
+		end
+		if tContains(RE.OrdersSeen[Enum.CraftingOrderType.Npc], orderID) then
+			if tContains(RE.OrdersFound[Enum.CraftingOrderType.Npc], orderID) then
+				row.ProductIcon.RECraftState:SetText("|TInterface\\RaidFrame\\ReadyCheck-Ready:32|t")
+			else
+				row.ProductIcon.RECraftState:SetText("|TInterface\\RaidFrame\\ReadyCheck-NotReady:32|t")
+			end
+		else
+			row.ProductIcon.RECraftState:SetText("|TInterface\\RaidFrame\\ReadyCheck-Waiting:32|t")
+		end
+	end
+end
+
 function RE:OnLoad(self)
 	self:RegisterEvent("ADDON_LOADED")
 	self:RegisterEvent("CHAT_MSG_SYSTEM")
@@ -213,7 +232,6 @@ end
 
 function RE:OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "RECraft" then
-		self:UnregisterEvent("ADDON_LOADED")
 		ProfessionsFrame_LoadUI()
 		RE.OP = ProfessionsFrame.OrdersPage
 		if not RECraftSettings then
@@ -228,6 +246,11 @@ function RE:OnEvent(self, event, ...)
 		RE:ResetSearchQueue()
 		LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
 		LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
+	elseif event == "ADDON_LOADED" and ... == "PatronOffers" then
+		PatronOffersRoot:RegisterOrderCallback(RECraftPOFFIntegration, false)
+		PatronOffersRoot:HookScript("OnShow", function ()
+			RE.OP.BrowseFrame.SearchButton:Show()
+		end)
 	elseif event == "CHAT_MSG_SYSTEM" and ... == ERR_CRAFTING_ORDER_RECEIVED then
 		RE.NotificationType = Enum.CraftingOrderType.Personal
 		EVENT:SendMessage("RECRAFT_NOTIFICATION")
@@ -471,3 +494,4 @@ function RE:ResetSearchQueue()
 		RE.ScanQueue[2] = Enum.CraftingOrderType.Npc
 	end
 end
+
