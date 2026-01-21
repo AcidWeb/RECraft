@@ -133,8 +133,8 @@ RE.AceConfig = {
 			get = function(_) return RE.Settings.ShowOnlyNpcOrderWithRegents end
 		},
 		Glimmer = {
-			name = "Only orders rewarding Glimmer/Acuity",
-			desc = "Trigger notification only if detected order reward contain Glimmer of Knowledge and/or Artisan's Acuity.",
+			name = "Only orders rewarding Flicker/Glimmer/Acuity",
+			desc = "Trigger notification only if detected order reward contain Glimmer/Flicker of Knowledge and/or Artisan's Acuity/Moxie.",
 			type = "toggle",
 			width = "full",
 			order = 12,
@@ -155,7 +155,10 @@ RE.DefaultConfig = {
 	MinimumTipInCopper = 0,
 	IgnoredItemID = {}
 }
-RE.GlimmerItems = {228725, 228729, 228727, 228731, 228733, 228735, 228737, 228739, 210814}
+RE.GlimmerItems = {228724, 228726, 228728, 228730, 228732, 228734, 228736, 228738, -- TWW Flicker
+	               228725, 228727, 228729, 228731, 228733, 228735, 228737, 228739, 210814, -- TWW Glimmer/Acuity
+				   246320, 246322, 246324, 246326, 246328, 246330, 246332, 246334, -- MN Flicker
+				   246321, 246323, 246325, 246327, 246329, 246331, 246333, 246335, 237505} -- MN Glimmer/Moxie
 
 RECraftStatusTemplateMixin = CreateFromMixins(TableBuilderCellMixin)
 
