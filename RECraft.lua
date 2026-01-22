@@ -3,6 +3,7 @@ local EVENT = LibStub("AceEvent-3.0")
 local BUCKET = LibStub("AceBucket-3.0")
 RECraft = RE
 
+local issecretvalue = issecretvalue
 local NewTicker = C_Timer.NewTicker
 local FlashClientIcon = FlashClientIcon
 local GetCrafterOrders = C_CraftingOrders.GetCrafterOrders
@@ -254,7 +255,7 @@ function RE:OnEvent(self, event, ...)
 		PatronOffersRoot:HookScript("OnShow", function ()
 			RE.OP.BrowseFrame.SearchButton:Show()
 		end)
-	elseif event == "CHAT_MSG_SYSTEM" and ... == ERR_CRAFTING_ORDER_RECEIVED then
+	elseif event == "CHAT_MSG_SYSTEM" and not issecretvalue(...) and ... == ERR_CRAFTING_ORDER_RECEIVED then
 		RE.NotificationType = Enum.CraftingOrderType.Personal
 		EVENT:SendMessage("RECRAFT_NOTIFICATION")
 	elseif event == "TRADE_SKILL_SHOW" then
