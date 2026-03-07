@@ -250,6 +250,13 @@ function RE:OnEvent(self, event, ...)
 		RE:ResetSearchQueue()
 		LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RECraft", RE.AceConfig)
 		LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RECraft", "RECraft")
+		if PatronOffersRoot then
+			PatronOffersRoot:RegisterOrderCallback(RECraftPOFFIntegration, false)
+			PatronOffersRoot:HookScript("OnShow", function ()
+				RE.OP.BrowseFrame.SearchButton:Show()
+			end)
+			self:UnregisterEvent("ADDON_LOADED")
+		end
 	elseif event == "ADDON_LOADED" and ... == "PatronOffers" then
 		PatronOffersRoot:RegisterOrderCallback(RECraftPOFFIntegration, false)
 		PatronOffersRoot:HookScript("OnShow", function ()
