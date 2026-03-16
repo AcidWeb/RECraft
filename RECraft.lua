@@ -506,3 +506,6 @@ function RE:ResetSearchQueue()
 	end
 end
 
+function ProfessionsFrame.OrdersPage.OrderView:SetOverrideCastBarActive()
+	-- Killing the castbar to prevent taint.
+end
