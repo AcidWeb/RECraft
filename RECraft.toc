@@ -1,7 +1,7 @@
-## Interface: 120001
+## Interface: 120005
 ## Title: |cFF74D06CRE|rCraft
 ## Notes: Automate searching of public crafting orders.
-## Version: 1.8.4
+## Version: 1.8.5
 ## Author: AcidWeb
 ## SavedVariablesPerCharacter: RECraftSettings
 ## OptionalDeps: PatronOffers
