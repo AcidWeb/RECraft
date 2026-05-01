@@ -237,6 +237,9 @@ end
 function RE:OnEvent(self, event, ...)
 	if event == "ADDON_LOADED" and ... == "RECraft" then
 		ProfessionsFrame_LoadUI()
+		function ProfessionsFrame.OrdersPage.OrderView:SetOverrideCastBarActive()
+			-- Killing the castbar to prevent taint.
+		end
 		RE.OP = ProfessionsFrame.OrdersPage
 		if not RECraftSettings then
 			RECraftSettings = RE.DefaultConfig
@@ -465,7 +468,7 @@ end
 
 function RE:SearchToggle(button)
 	if not RE.Timer and button ~= "override" then
-		RE.Timer = NewTicker(5, RE.SearchRequest)
+		RE.Timer = NewTicker(1, RE.SearchRequest)
 		RE:SearchRequest()
 		RE:RestartSpinner()
 	elseif RE.Timer then
@@ -504,8 +507,4 @@ function RE:ResetSearchQueue()
 	elseif RE.Settings.ScanNpcOrders then
 		RE.ScanQueue[2] = Enum.CraftingOrderType.Npc
 	end
-end
-
-function ProfessionsFrame.OrdersPage.OrderView:SetOverrideCastBarActive()
-	-- Killing the castbar to prevent taint.
 end
